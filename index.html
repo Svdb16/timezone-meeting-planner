@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TimeZone Meeting Planner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#123e63">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TimeZone Planner">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{--navy:#123e63;--blue:#2374e1;--ink:#172435;--muted:#66758a;--line:#dfe6ee;--bg:#f3f6fa;--green:#16845b}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.app{max-width:1180px;margin:24px auto;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 12px 40px #102a4410}
+header{background:#fff;padding:22px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:14px;background:var(--navy);color:white;display:grid;place-items:center;font-size:24px}
+h1{font-size:22px;margin:0 0 4px}header p,.sub{margin:0;color:var(--muted);font-size:13px}.pill{background:#e9f6ef;color:#16734f;border-radius:99px;padding:7px 11px;font-size:12px;font-weight:600}
+main{padding:26px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px}.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);font-weight:700}
+h2{font-size:25px;margin:6px 0}.intro{color:var(--muted);margin:0 0 22px;line-height:1.5}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;background:#f8fafc;border:1px solid var(--line);padding:16px;border-radius:14px;margin-bottom:18px}
+.timeline{border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:20px;background:#fff}
+.timelinehead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.timelinehead h3{margin:0;font-size:15px}
+.timelineclocks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
+.clockcard{border-radius:10px;background:#f5f8fc;padding:10px 12px;min-width:0}
+.clockcard .clockname{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clockcard .clocktime{font-size:23px;font-weight:750;margin-top:3px}
+.clockcard .clockdate{font-size:11px;color:var(--muted);margin-top:2px}
+#timeSlider{width:100%;padding:0;min-height:24px;accent-color:var(--blue);cursor:pointer}
+.tickrow{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:2px}
+.timelinehint{font-size:12px;color:var(--muted);margin:9px 0 0}
+label{display:block;font-size:12px;font-weight:700;color:#526176;margin-bottom:7px}
+input,select,button{font:inherit}input,select{width:100%;border:1px solid #ccd6e2;border-radius:9px;background:#fff;padding:11px 10px;color:var(--ink);min-height:42px}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 12px}.sectionhead h3{margin:0;font-size:16px}
+.btn{border:0;border-radius:9px;padding:10px 13px;cursor:pointer;font-weight:650}.primary{background:var(--blue);color:white}.secondary{background:#edf3fa;color:var(--navy)}.remove{background:transparent;color:#7c8999;padding:5px 8px}
+.locations{display:flex;flex-direction:column;gap:10px}.city{border:1px solid var(--line);border-radius:12px;padding:13px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+.citytop{display:flex;align-items:center;gap:9px;font-weight:700}.dot{width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0}.cityzone{font-size:12px;color:var(--muted);margin:5px 0 0 19px}.citytime{text-align:right;font-size:22px;font-weight:750;white-space:nowrap}.citydate{text-align:right;font-size:11px;color:var(--muted);margin-top:4px}
+.side{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:18px;height:fit-content}
+.share-panel{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.share-panel .sharebox{min-height:180px;font-family:inherit;font-size:13px}.side h3{margin:0 0 8px;font-size:17px}.side p{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 16px}
+.slot{padding:13px;border:1px solid var(--line);border-radius:11px;background:white;margin:9px 0}.slot strong{display:block;font-size:17px;margin:4px 0}.slot small{color:var(--muted)}.slot.good{border-color:#a7d9c3;background:#f1fbf6}.full{width:100%;margin-top:10px}.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:16px}
+.suggestions{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.suggestion{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.suggestion.best{border-color:#9bd6bc;background:#f1fbf6}
+.suggestion .when{font-weight:750;font-size:16px}.suggestion .detail{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+.sharebox{width:100%;min-height:130px;resize:vertical;border:1px solid #ccd6e2;border-radius:10px;padding:12px;line-height:1.5;font-size:13px}
+.share-section-head,.share-section-content,.share-section-actions{grid-column:1 / -1}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions .btn{flex:1}
+.addrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.searchwrap{position:relative;min-width:0}
+.searchresults{position:absolute;z-index:20;top:calc(100% + 5px);left:0;right:0;max-height:270px;overflow-y:auto;background:#fff;border:1px solid #cbd6e2;border-radius:11px;box-shadow:0 12px 28px #102a4420;padding:5px}
+.searchresult{width:100%;border:0;background:#fff;text-align:left;border-radius:8px;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink)}
+.searchresult:hover,.searchresult:focus,.searchresult.active{background:#edf4fc;outline:2px solid #2374e1;outline-offset:-2px}
+.searchresult .resultname{font-weight:650}.searchresult .resultcountry{font-size:12px;color:var(--muted);margin-top:3px}
+.searchresult .resultzone{font-size:11px;color:var(--muted);white-space:nowrap}
+.searchempty{padding:12px;color:var(--muted);font-size:13px}
+.searchhelp{font-size:12px;color:var(--muted);margin:8px 0 0}.footer{padding:0 26px 22px;color:var(--muted);font-size:12px}
+@media(max-width:850px){main{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.side{order:-1}}
+@media(max-width:520px){.app{margin:0;border-radius:0}header{padding:18px}.pill{display:none}main{padding:18px}.controls{grid-template-columns:1fr}.citytime{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="logo">◷</div><div><h1>TimeZone Meeting Planner</h1><p>Find a time that works across the world.</p></div></div>
+  <div class="pill">● Local, private &amp; simple</div>
+</header>
+<main>
+<section>
+  <div class="eyebrow">Meeting planner</div>
+  <h2>What time works for everyone?</h2>
+  <p class="intro">Choose a reference city, date and time. Every other city updates instantly, including when the date changes.</p>
+  <div class="controls">
+    <div><label for="baseCity">Set time in</label><select id="baseCity"></select></div>
+    <div><label for="meetingDate">Date</label><input id="meetingDate" type="date"></div>
+    <div><label for="meetingTime">Meeting time</label><input id="meetingTime" type="time" value="14:00"></div>
+  </div>
+  <div class="timeline">
+    <div class="timelinehead"><h3>Compare times</h3><span class="sub">Drag or click the bar</span></div>
+    <div class="timelineclocks">
+      <div class="clockcard"><div class="clockname" id="yourClockName">Your time</div><div class="clocktime" id="yourClockTime">--:--</div><div class="clockdate" id="yourClockDate">Choose a date</div></div>
+      <div class="clockcard"><div class="clockname" id="otherClockName">Add a person to compare</div><div class="clocktime" id="otherClockTime">--:--</div><div class="clockdate" id="otherClockDate">Their local time</div></div>
+    </div>
+    <input id="timeSlider" type="range" min="0" max="47" step="1" value="28" aria-label="Choose meeting time in half-hour steps">
+    <div class="tickrow"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:30</span></div>
+    <p class="timelinehint">Click or drag to choose a time in your time zone. The meeting time and share message update automatically.</p>
+  </div>
+  <div class="sectionhead"><h3>Add a city or country</h3></div>
+  <div class="addrow search-add">
+    <div class="searchwrap">
+      <input id="citySearch" type="search" placeholder="Search city or country…" autocomplete="off" aria-label="Search cities or countries" aria-controls="cityResults" aria-expanded="false">
+      <div id="cityResults" class="searchresults" role="listbox" aria-label="Matching cities" hidden></div>
+    </div>
+    <button class="btn primary" id="addBtn" disabled>+ Add</button>
+  </div>
+  <p id="searchHelp" class="searchhelp">Type to search. No locations will be added automatically.</p>
+  <div class="sectionhead"><h3>Everyone's local time</h3><button class="btn secondary" id="copyBtn">Copy times</button></div>
+  <div id="locations" class="locations"></div>
+
+  
+  <p class="note">Tip: choose a time in your own city first. The app handles daylight-saving changes for the selected date.</p>
+</section>
+<aside class="side">
+  <div class="eyebrow">Quick guide</div><h3>Plan in seconds</h3>
+  <p>Use a time that suits the host, then check the other cities before sending an invite.</p>
+  <div class="slot good" id="zoneInfo"><small>Meeting time-zone note</small><strong>Choose a meeting location</strong><small>Important time-zone details will appear here, including daylight-saving changes and the time difference.</small></div>
+  <button class="btn primary full" id="resetBtn">Reset to starter cities</button>
+  <p class="note">Starter cities include South Africa, the Netherlands, Portugal, the UK, Oman, the USA and Australia.</p>
+  <div class="share-panel">
+    <div class="sectionhead"><h3>Share meeting times</h3></div>
+    <p class="sub" style="margin-bottom:10px">Copy this message and send it to the other person.</p>
+    <textarea id="shareText" class="sharebox" aria-label="Meeting message"></textarea>
+    <div class="actions" style="margin-top:9px"><button class="btn primary" id="copyMessage">Copy message</button><button class="btn secondary" id="shareMessage">Share…</button></div>
+  </div>
+</aside>
+</main>
+<div class="footer">Prototype · Time zones use your browser's built-in time-zone database. No account or internet connection is required after opening this file.</div>
+</div>
+<script>const cityData = [
+ {name:"Johannesburg", zone:"Africa/Johannesburg", country:"South Africa"},
+ {name:"Amsterdam", zone:"Europe/Amsterdam", country:"Netherlands"},
+ {name:"Lisbon", zone:"Europe/Lisbon", country:"Portugal"},
+ {name:"London", zone:"Europe/London", country:"United Kingdom"},
+ {name:"Muscat", zone:"Asia/Muscat", country:"Oman"},
+ {name:"New York", zone:"America/New_York", country:"USA"},
+ {name:"Los Angeles", zone:"America/Los_Angeles", country:"USA"},
+ {name:"Sydney", zone:"Australia/Sydney", country:"Australia"},
+ {name:"Bali", zone:"Asia/Makassar", country:"Indonesia"},
+ {name:"Nairobi", zone:"Africa/Nairobi", country:"Kenya"},
+ {name:"Freetown", zone:"Africa/Freetown", country:"Sierra Leone"},
+ {name:"Dubai", zone:"Asia/Dubai", country:"UAE"},
+ {name:"Auckland", zone:"Pacific/Auckland", country:"New Zealand"},
+ {name:"Tokyo", zone:"Asia/Tokyo", country:"Japan"},
+ {name:"São Paulo", zone:"America/Sao_Paulo", country:"Brazil"},
+ {name:"Vancouver", zone:"America/Vancouver", country:"Canada"},
+ {name:"Mexico City", zone:"America/Mexico_City", country:"Mexico"},
+ {name:"Cape Town", zone:"Africa/Johannesburg", country:"South Africa"},
+ // Central America
+ {name:"San Salvador", zone:"America/El_Salvador", country:"El Salvador"},
+ {name:"El Tunco", zone:"America/El_Salvador", country:"El Salvador"},
+ {name:"Santa Ana", zone:"America/El_Salvador", country:"El Salvador"},
+ {name:"Antigua Guatemala", zone:"America/Guatemala", country:"Guatemala"},
+ {name:"Guatemala City", zone:"America/Guatemala", country:"Guatemala"},
+ {name:"San José", zone:"America/Costa_Rica", country:"Costa Rica"},
+ {name:"Panama City", zone:"America/Panama", country:"Panama"},
+ {name:"Tegucigalpa", zone:"America/Tegucigalpa", country:"Honduras"},
+ {name:"Managua", zone:"America/Managua", country:"Nicaragua"},
+ {name:"Belize City", zone:"America/Belize", country:"Belize"},
+ // South America
+ {name:"Bogotá", zone:"America/Bogota", country:"Colombia"},
+ {name:"Medellín", zone:"America/Bogota", country:"Colombia"},
+ {name:"Lima", zone:"America/Lima", country:"Peru"},
+ {name:"Quito", zone:"America/Guayaquil", country:"Ecuador"},
+ {name:"Guayaquil", zone:"America/Guayaquil", country:"Ecuador"},
+ {name:"Santiago", zone:"America/Santiago", country:"Chile"},
+ {name:"Buenos Aires", zone:"America/Argentina/Buenos_Aires", country:"Argentina"},
+ {name:"Montevideo", zone:"America/Montevideo", country:"Uruguay"},
+ {name:"La Paz", zone:"America/La_Paz", country:"Bolivia"},
+ {name:"Caracas", zone:"America/Caracas", country:"Venezuela"},
+ // North America & Caribbean
+ {name:"Toronto", zone:"America/Toronto", country:"Canada"},
+ {name:"Chicago", zone:"America/Chicago", country:"USA"},
+ {name:"Denver", zone:"America/Denver", country:"USA"},
+ {name:"Miami", zone:"America/New_York", country:"USA"},
+ {name:"Honolulu", zone:"Pacific/Honolulu", country:"USA"},
+ {name:"San Juan", zone:"America/Puerto_Rico", country:"Puerto Rico"},
+ {name:"Kingston", zone:"America/Jamaica", country:"Jamaica"},
+ {name:"Santo Domingo", zone:"America/Santo_Domingo", country:"Dominican Republic"},
+ {name:"Nassau", zone:"America/Nassau", country:"Bahamas"},
+ // Europe
+ {name:"Paris", zone:"Europe/Paris", country:"France"},
+ {name:"Berlin", zone:"Europe/Berlin", country:"Germany"},
+ {name:"Madrid", zone:"Europe/Madrid", country:"Spain"},
+ {name:"Barcelona", zone:"Europe/Madrid", country:"Spain"},
+ {name:"Rome", zone:"Europe/Rome", country:"Italy"},
+ {name:"Zurich", zone:"Europe/Zurich", country:"Switzerland"},
+ {name:"Brussels", zone:"Europe/Brussels", country:"Belgium"},
+ {name:"Copenhagen", zone:"Europe/Copenhagen", country:"Denmark"},
+ {name:"Stockholm", zone:"Europe/Stockholm", country:"Sweden"},
+ {name:"Oslo", zone:"Europe/Oslo", country:"Norway"},
+ {name:"Helsinki", zone:"Europe/Helsinki", country:"Finland"},
+ {name:"Athens", zone:"Europe/Athens", country:"Greece"},
+ {name:"Istanbul", zone:"Europe/Istanbul", country:"Türkiye"},
+ {name:"Kyiv", zone:"Europe/Kyiv", country:"Ukraine"},
+ {name:"Warsaw", zone:"Europe/Warsaw", country:"Poland"},
+ {name:"Prague", zone:"Europe/Prague", country:"Czechia"},
+ {name:"Vienna", zone:"Europe/Vienna", country:"Austria"},
+ {name:"Dublin", zone:"Europe/Dublin", country:"Ireland"},
+ {name:"Reykjavik", zone:"Atlantic/Reykjavik", country:"Iceland"},
+ // Africa
+ {name:"Lagos", zone:"Africa/Lagos", country:"Nigeria"},
+ {name:"Accra", zone:"Africa/Accra", country:"Ghana"},
+ {name:"Dakar", zone:"Africa/Dakar", country:"Senegal"},
+ {name:"Monrovia", zone:"Africa/Monrovia", country:"Liberia"},
+ {name:"Abidjan", zone:"Africa/Abidjan", country:"Côte d’Ivoire"},
+ {name:"Kampala", zone:"Africa/Kampala", country:"Uganda"},
+ {name:"Kigali", zone:"Africa/Kigali", country:"Rwanda"},
+ {name:"Addis Ababa", zone:"Africa/Addis_Ababa", country:"Ethiopia"},
+ {name:"Dar es Salaam", zone:"Africa/Dar_es_Salaam", country:"Tanzania"},
+ {name:"Maputo", zone:"Africa/Maputo", country:"Mozambique"},
+ {name:"Harare", zone:"Africa/Harare", country:"Zimbabwe"},
+ {name:"Lusaka", zone:"Africa/Lusaka", country:"Zambia"},
+ {name:"Gaborone", zone:"Africa/Gaborone", country:"Botswana"},
+ {name:"Windhoek", zone:"Africa/Windhoek", country:"Namibia"},
+ {name:"Cairo", zone:"Africa/Cairo", country:"Egypt"},
+ {name:"Casablanca", zone:"Africa/Casablanca", country:"Morocco"},
+ {name:"Tunis", zone:"Africa/Tunis", country:"Tunisia"},
+ // Middle East & Asia
+ {name:"Jerusalem", zone:"Asia/Jerusalem", country:"Israel"},
+ {name:"Beirut", zone:"Asia/Beirut", country:"Lebanon"},
+ {name:"Amman", zone:"Asia/Amman", country:"Jordan"},
+ {name:"Riyadh", zone:"Asia/Riyadh", country:"Saudi Arabia"},
+ {name:"Doha", zone:"Asia/Qatar", country:"Qatar"},
+ {name:"Kuwait City", zone:"Asia/Kuwait", country:"Kuwait"},
+ {name:"Karachi", zone:"Asia/Karachi", country:"Pakistan"},
+ {name:"Delhi", zone:"Asia/Kolkata", country:"India"},
+ {name:"Mumbai", zone:"Asia/Kolkata", country:"India"},
+ {name:"Dhaka", zone:"Asia/Dhaka", country:"Bangladesh"},
+ {name:"Kathmandu", zone:"Asia/Kathmandu", country:"Nepal"},
+ {name:"Bangkok", zone:"Asia/Bangkok", country:"Thailand"},
+ {name:"Singapore", zone:"Asia/Singapore", country:"Singapore"},
+ {name:"Kuala Lumpur", zone:"Asia/Kuala_Lumpur", country:"Malaysia"},
+ {name:"Jakarta", zone:"Asia/Jakarta", country:"Indonesia"},
+ {name:"Manila", zone:"Asia/Manila", country:"Philippines"},
+ {name:"Hong Kong", zone:"Asia/Hong_Kong", country:"Hong Kong"},
+ {name:"Shanghai", zone:"Asia/Shanghai", country:"China"},
+ {name:"Seoul", zone:"Asia/Seoul", country:"South Korea"},
+ {name:"Taipei", zone:"Asia/Taipei", country:"Taiwan"},
+ // Oceania
+ {name:"Perth", zone:"Australia/Perth", country:"Australia"},
+ {name:"Adelaide", zone:"Australia/Adelaide", country:"Australia"},
+ {name:"Brisbane", zone:"Australia/Brisbane", country:"Australia"},
+ {name:"Melbourne", zone:"Australia/Melbourne", country:"Australia"},
+ {name:"Fiji", zone:"Pacific/Fiji", country:"Fiji"}
+];
+const $ = id => document.getElementById(id);
+const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Johannesburg";
+function cityForZone(zone){
+  return cityData.find(c=>c.zone===zone) || null;
+}
+let baseCity = cityForZone(localZone) || cityData.find(c=>c.name==="Johannesburg");
+if(!cityForZone(localZone)){
+  const inferredName = localZone.split("/").pop().replaceAll("_"," ");
+  baseCity = {name: inferredName, zone: localZone, country: "Your local time zone"};
+  cityData.unshift(baseCity);
+}
+let selected = [baseCity.name];
+let activeSearchIndex = -1;
+function populateSelects(){
+  const base=$("baseCity");
+  base.innerHTML=cityData.map(c=>`<option value="${c.name}">${c.name} (${c.country})</option>`).join("");
+  base.value=baseCity.name;
+  updateSearchResults();
+}
+function updateSearchResults(){
+  const input=$("citySearch"), results=$("cityResults"), add=$("addBtn");
+  if(!input||!results||!add)return;
+  const q=input.value.trim().toLocaleLowerCase();
+  activeSearchIndex=-1;
+  const matches=cityData.filter(c=>!selected.includes(c.name) &&
+    (!q || c.name.toLocaleLowerCase().includes(q) || c.country.toLocaleLowerCase().includes(q) || c.zone.toLocaleLowerCase().includes(q)));
+  add.disabled=true; add.style.opacity=".5";
+  if(!q){results.hidden=true;input.setAttribute("aria-expanded","false");$("searchHelp").textContent="Type a city or country, then select a result to add it.";return;}
+  results.hidden=false;input.setAttribute("aria-expanded","true");
+  if(!matches.length){
+    results.innerHTML=`<div class="searchempty" role="status">No new matching cities found. Try another name.</div>`;
+    $("searchHelp").textContent="Already-added locations are hidden from the results.";return;
+  }
+  results.innerHTML=matches.slice(0,12).map(c=>`<button type="button" class="searchresult" role="option" data-city="${c.name}"><span><span class="resultname">${c.name}</span><span class="resultcountry" style="display:block">${c.country}</span></span><span class="resultzone">${c.zone}</span></button>`).join("");
+  results.querySelectorAll("[data-city]").forEach(btn=>btn.addEventListener("click",()=>{
+    const c=cityData.find(x=>x.name===btn.dataset.city);
+    if(c&&!selected.includes(c.name)){selected.push(c.name);input.value="";results.hidden=true;input.setAttribute("aria-expanded","false");$("searchHelp").textContent=`Added ${c.name}. Search to add another location.`;render();}
+    input.focus();
+  }));
+  $("searchHelp").textContent=`${matches.length} matching locations. Select one to add it.`;
+}
+function partsAt(date, zone){
+  const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:zone,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+  const p=Object.fromEntries(fmt.formatToParts(date).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+  return {year:+p.year,month:+p.month,day:+p.day,hour:+p.hour,minute:+p.minute};
+}
+function toInstant(dateStr,timeStr,zone){
+  const [y,m,d]=dateStr.split("-").map(Number),[hh,mm]=timeStr.split(":").map(Number);
+  const desired=Date.UTC(y,m-1,d,hh,mm);let guess=desired;
+  for(let i=0;i<4;i++){const p=partsAt(new Date(guess),zone);const represented=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute);const delta=desired-represented;guess+=delta;if(delta===0)break;}
+  return new Date(guess);
+}
+function offsetLabel(date,zone){
+  const p=partsAt(date,zone),utc=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute),offset=Math.round((utc-date.getTime())/60000);
+  const sign=offset>=0?"+":"−",abs=Math.abs(offset);
+  return `UTC${sign}${String(Math.floor(abs/60)).padStart(2,"0")}:${String(abs%60).padStart(2,"0")}`;
+}
+function timeLabel(date,zone){return new Intl.DateTimeFormat("en-GB",{timeZone:zone,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(date)}
+function dateLabel(date,zone){return new Intl.DateTimeFormat("en-GB",{timeZone:zone,weekday:"short",day:"numeric",month:"short",year:"numeric"}).format(date)}
+function updateTimeline(instant){
+  const yourName=baseCity.name;
+  const otherName=selected.find(name=>name!==yourName);
+  $("yourClockName").textContent=`Your time · ${yourName}`;
+  $("yourClockTime").textContent=timeLabel(instant,baseCity.zone);
+  $("yourClockDate").textContent=dateLabel(instant,baseCity.zone);
+  if(otherName){
+    const other=cityData.find(c=>c.name===otherName);
+    $("otherClockName").textContent=`Meeting with · ${other.name}`;
+    $("otherClockTime").textContent=timeLabel(instant,other.zone);
+    $("otherClockDate").textContent=dateLabel(instant,other.zone);
+  }else{
+    $("otherClockName").textContent="Add a person to compare";
+    $("otherClockTime").textContent="--:--";
+    $("otherClockDate").textContent="Their local time will appear here";
+  }
+  const [hh,mm]=$("meetingTime").value.split(":").map(Number);
+  $("timeSlider").value=hh*2+(mm>=30?1:0);
+}
+function zoneOffsetMinutes(date,zone){
+  const p=partsAt(date,zone);
+  return Math.round((Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute)-date.getTime())/60000);
+}
+function zoneHasSeasonalChange(zone,year){
+  const jan=zoneOffsetMinutes(new Date(Date.UTC(year,0,15,12)),zone);
+  const jul=zoneOffsetMinutes(new Date(Date.UTC(year,6,15,12)),zone);
+  return jan!==jul;
+}
+function updateZoneInfo(instant){
+  const box=$("zoneInfo");
+  if(!box)return;
+  const others=selected.filter(name=>name!==baseCity.name);
+  if(!others.length){
+    box.innerHTML=`<small>Meeting time-zone note</small><strong>Add a meeting location</strong><small>Search for the other person's city or country to see the time difference and daylight-saving information for your meeting date.</small>`;
+    return;
+  }
+  const other=cityData.find(c=>c.name===others[0]);
+  const diff=zoneOffsetMinutes(instant,other.zone)-zoneOffsetMinutes(instant,baseCity.zone);
+  const abs=Math.abs(diff), diffText=diff===0?"the same time":`${Math.floor(abs/60)}${abs%60?`h ${abs%60}m`:"h"} ${diff>0?"ahead":"behind"}`;
+  const seasonal=zoneHasSeasonalChange(other.zone,instant.getUTCFullYear());
+  const baseSeasonal=zoneHasSeasonalChange(baseCity.zone,instant.getUTCFullYear());
+  const warnings=[];
+  if(seasonal)warnings.push(`${other.name} observes seasonal clock changes; its offset on this date is ${offsetLabel(instant,other.zone)}.`);
+  if(baseSeasonal)warnings.push(`${baseCity.name} also has seasonal clock changes.`);
+  if(dateLabel(instant,other.zone)!==dateLabel(instant,baseCity.zone))warnings.push(`The local calendar date differs: ${other.name} is on ${dateLabel(instant,other.zone)}.`);
+  if(!warnings.length)warnings.push("No seasonal clock change detected for these locations in this year.");
+  box.innerHTML=`<small>Meeting time-zone note</small><strong>${other.name} is ${diffText} vs. ${baseCity.name}</strong><small>${warnings.join(" ")}</small>`;
+}
+function render(){
+  const dateStr=$("meetingDate").value,timeStr=$("meetingTime").value;
+  if(!dateStr||!timeStr)return;
+  baseCity=cityData.find(c=>c.name===$("baseCity").value)||baseCity;
+  const instant=toInstant(dateStr,timeStr,baseCity.zone);
+  updateTimeline(instant);
+  updateZoneInfo(instant);
+  $("locations").innerHTML=selected.map(name=>{
+    const c=cityData.find(x=>x.name===name);if(!c)return "";
+    return `<div class="city"><div><div class="citytop"><span class="dot" style="background:${c.name===baseCity.name?'#16845b':'#2374e1'}"></span>${c.name}${c.name===baseCity.name?' <span style="font-size:10px;color:#16845b;background:#e8f7ef;padding:3px 6px;border-radius:8px">YOUR TIME</span>':''}</div><div class="cityzone">${c.country} · ${offsetLabel(instant,c.zone)}</div></div><div><div class="citytime">${timeLabel(instant,c.zone)}</div><div class="citydate">${dateLabel(instant,c.zone)}</div></div><button class="remove" title="Remove ${c.name}" data-remove="${c.name}" aria-label="Remove ${c.name}">✕</button></div>`;
+  }).join("");
+  $("locations").querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.remove!==baseCity.name){selected=selected.filter(x=>x!==b.dataset.remove);render();} }));
+  const otherCities=selected.filter(name=>name!==baseCity.name);
+  const recipient=otherCities.length ? cityData.find(x=>x.name===otherCities[0]) : null;
+  const recipientLine=recipient
+    ? `Would ${dateLabel(instant,recipient.zone)} at ${timeLabel(instant,recipient.zone)} (${recipient.name} time) work for you?`
+    : `Would ${dateLabel(instant,baseCity.zone)} at ${timeLabel(instant,baseCity.zone)} (${baseCity.name} time) work for you?`;
+  const myTime=`In my time (${baseCity.name}), that would be ${timeLabel(instant,baseCity.zone)} on ${dateLabel(instant,baseCity.zone)}.`;
+  const otherLines=otherCities.length>1
+    ? `\n\nOther local times:\n${otherCities.slice(1).map(name=>{const c=cityData.find(x=>x.name===name);return `• ${c.name}: ${timeLabel(instant,c.zone)} on ${dateLabel(instant,c.zone)}`;}).join("\n")}`
+    : "";
+  const message=`${recipientLine}\n\n${myTime}${otherLines}\n\nPlease let me know if this works for you.`;
+  $("shareText").value=message;
+  updateSearchResults();
+}
+function setToday(){
+  const now=new Date(),p=partsAt(now,localZone);
+  $("meetingDate").value=`${p.year}-${String(p.month).padStart(2,"0")}-${String(p.day).padStart(2,"0")}`;
+  $("meetingTime").value=timeLabel(now,localZone);
+}
+["baseCity","meetingDate","meetingTime"].forEach(id=>$(id).addEventListener("change",render));
+$("timeSlider").addEventListener("input",()=>{
+ const value=Number($("timeSlider").value);
+ $("meetingTime").value=`${String(Math.floor(value/2)).padStart(2,"0")}:${value%2?"30":"00"}`;
+ render();
+});
+$("citySearch").addEventListener("input",updateSearchResults);
+$("citySearch").addEventListener("keydown",e=>{
+ const results=[...$("cityResults").querySelectorAll("[data-city]")];
+ if(e.key==="ArrowDown"&& !$("cityResults").hidden&&results.length){e.preventDefault();activeSearchIndex=Math.min(activeSearchIndex+1,results.length-1);results.forEach((b,i)=>b.classList.toggle("active",i===activeSearchIndex));results[activeSearchIndex].scrollIntoView({block:"nearest"});}
+ else if(e.key==="ArrowUp"&& !$("cityResults").hidden&&results.length){e.preventDefault();activeSearchIndex=Math.max(activeSearchIndex-1,0);results.forEach((b,i)=>b.classList.toggle("active",i===activeSearchIndex));results[activeSearchIndex].scrollIntoView({block:"nearest"});}
+ else if(e.key==="Escape"){$("cityResults").hidden=true;$("citySearch").setAttribute("aria-expanded","false");}
+ else if(e.key==="Enter"){const chosen=activeSearchIndex>=0?results[activeSearchIndex]:results[0];if(chosen){e.preventDefault();chosen.click();}}
+});
+$("addBtn").addEventListener("click",()=>{const first=$("cityResults").querySelector("[data-city]");if(first)first.click();});
+document.addEventListener("click",e=>{if(!$("cityResults").contains(e.target)&&e.target!==$("citySearch")){$("cityResults").hidden=true;$("citySearch").setAttribute("aria-expanded","false");}});
+async function copyText(textValue,button,defaultLabel){
+ try{await navigator.clipboard.writeText(textValue);}
+ catch(e){const ta=document.createElement("textarea");ta.value=textValue;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}
+ button.textContent="Copied!";setTimeout(()=>button.textContent=defaultLabel,1500);
+}
+$("copyBtn").addEventListener("click",()=>copyText($("shareText").value,$("copyBtn"),"Copy times"));
+$("copyMessage").addEventListener("click",()=>copyText($("shareText").value,$("copyMessage"),"Copy message"));
+$("shareMessage").addEventListener("click",async()=>{const textValue=$("shareText").value;if(navigator.share){try{await navigator.share({title:"Suggested meeting time",text:textValue});}catch(e){}}else{copyText(textValue,$("shareMessage"),"Share…");}});
+$("resetBtn").addEventListener("click",()=>{selected=[baseCity.name];$("citySearch").value="";populateSelects();render();});
+setToday();populateSelects();render();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(err => console.warn("Offline support unavailable:", err));
+  });
+}
+</script>
+</body>
+</html>
